@@ -1,0 +1,121 @@
+cmake_minimum_required(VERSION 3.24)
+project(grvt_signing VERSION 0.1.0 LANGUAGES CXX)
+
+option(GRVT_SDK_BUILD_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
+option(GRVT_SDK_BUILD_EXAMPLES "Build the examples" ${PROJECT_IS_TOP_LEVEL})
+option(GRVT_SDK_WARNINGS_AS_ERRORS "Compile with -Werror" OFF)
+option(GRVT_SDK_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
+option(GRVT_SDK_NO_RTTI "Compile with -fno-rtti" OFF)
+option(GRVT_SDK_SANITIZE "Compile with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(GRVT_SDK_CONSUMER_TEST "Test the installed package with a consumer project" ${PROJECT_IS_TOP_LEVEL})
+
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/generated/models.cpp")
+  message(FATAL_ERROR "generated code is missing: run `make sdk-gen-cpp` in the platform repo")
+endif()
+
+# The test data every SDK shares (contract/, scenarios/) lives in the monorepo's sdk/ folder, found by walking up
+# from here. Outside the monorepo, point GRVT_SDK_SHARED (-D or environment) at a folder that holds them, or
+# GRVT_SIGNING_CASES_FILE (-D) at signing.json. Neither is cached unless you pass it with -D, so a later configure
+# in the same build folder picks up a new environment variable.
+if(GRVT_SDK_SHARED)
+  set(grvt_shared "${GRVT_SDK_SHARED}")
+else()
+  set(grvt_shared "$ENV{GRVT_SDK_SHARED}")
+endif()
+if(NOT grvt_shared)
+  set(dir "${CMAKE_CURRENT_SOURCE_DIR}")
+  while(NOT grvt_shared)
+    if(EXISTS "${dir}/contract/contract.json" AND IS_DIRECTORY "${dir}/scenarios")
+      set(grvt_shared "${dir}")
+    else()
+      get_filename_component(parent "${dir}" DIRECTORY)
+      if(parent STREQUAL dir)
+        break()
+      endif()
+      set(dir "${parent}")
+    endif()
+  endwhile()
+endif()
+if(NOT DEFINED CACHE{GRVT_SIGNING_CASES_FILE} AND grvt_shared)
+  set(GRVT_SIGNING_CASES_FILE "${grvt_shared}/scenarios/signing.json")
+endif()
+if(GRVT_SDK_BUILD_TESTS AND NOT EXISTS "${GRVT_SIGNING_CASES_FILE}")
+  if(GRVT_SIGNING_CASES_FILE)
+    set(grvt_looked " at ${GRVT_SIGNING_CASES_FILE}")
+  endif()
+  message(FATAL_ERROR "The shared signing test cases were not found${grvt_looked}. "
+    "Outside the monorepo, set GRVT_SDK_SHARED (environment or -D) to a folder that holds contract/ and scenarios/, "
+    "or -DGRVT_SIGNING_CASES_FILE to signing.json (developers.grvt.io/downloads/signing.json).")
+endif()
+
+include(GNUInstallDirs)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+option(GRVT_SIGNING_WITH_SECP256K1 "Build the optional libsecp256k1 signer" OFF)
+
+add_library(grvt_signing
+  src/json.cpp src/keccak.cpp src/result.cpp src/scalars.cpp src/sign_support.cpp
+  src/signature.cpp src/generated/models.cpp src/generated/signing.cpp)
+add_library(grvt::signing ALIAS grvt_signing)
+set_target_properties(grvt_signing PROPERTIES EXPORT_NAME signing)
+target_compile_features(grvt_signing PUBLIC cxx_std_20)
+target_include_directories(grvt_signing PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> PRIVATE src)
+if(GRVT_SIGNING_WITH_SECP256K1)
+  find_package(Secp256k1 REQUIRED)
+  add_library(grvt_signer src/signer.cpp)
+  add_library(grvt::signer ALIAS grvt_signer)
+  set_target_properties(grvt_signer PROPERTIES EXPORT_NAME signer)
+  target_include_directories(grvt_signer PRIVATE src)
+  target_link_libraries(grvt_signer PUBLIC grvt_signing PRIVATE Secp256k1::secp256k1)
+endif()
+
+# Flags for this project's own targets (the library, tests and examples), not for consumers.
+add_library(grvt_sdk_flags INTERFACE)
+target_compile_features(grvt_sdk_flags INTERFACE cxx_std_20)
+target_compile_options(grvt_sdk_flags INTERFACE -Wall -Wextra $<$<BOOL:${GRVT_SDK_WARNINGS_AS_ERRORS}>:-Werror>
+  $<$<BOOL:${GRVT_SDK_NO_EXCEPTIONS}>:-fno-exceptions> $<$<BOOL:${GRVT_SDK_NO_RTTI}>:-fno-rtti>)
+if(GRVT_SDK_SANITIZE)
+  target_compile_options(grvt_sdk_flags INTERFACE -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(grvt_sdk_flags INTERFACE -fsanitize=address,undefined)
+endif()
+target_link_libraries(grvt_signing PRIVATE $<BUILD_INTERFACE:grvt_sdk_flags>)
+
+include(CMakePackageConfigHelpers)
+if(GRVT_SIGNING_WITH_SECP256K1)
+  target_link_libraries(grvt_signer PRIVATE $<BUILD_INTERFACE:grvt_sdk_flags>)
+  install(TARGETS grvt_signer EXPORT grvt_signingTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+install(TARGETS grvt_signing EXPORT grvt_signingTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(EXISTS "${GRVT_SIGNING_CASES_FILE}")
+  install(FILES "${GRVT_SIGNING_CASES_FILE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/grvt_signing RENAME signing.json)
+endif()
+set(GRVT_SDK_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/grvt_signing)
+install(EXPORT grvt_signingTargets NAMESPACE grvt:: DESTINATION ${GRVT_SDK_CMAKE_DIR})
+configure_package_config_file(cmake/grvt_signingConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/grvt_signingConfig.cmake
+  INSTALL_DESTINATION ${GRVT_SDK_CMAKE_DIR})
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/grvt_signingConfigVersion.cmake COMPATIBILITY SameMinorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grvt_signingConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/grvt_signingConfigVersion.cmake
+  cmake/FindSecp256k1.cmake DESTINATION ${GRVT_SDK_CMAKE_DIR})
+
+if(GRVT_SDK_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
+if(GRVT_SDK_BUILD_EXAMPLES)
+  add_executable(grvt_signing_reference examples/reference.cpp)
+  target_link_libraries(grvt_signing_reference PRIVATE grvt::signing grvt_sdk_flags)
+  add_executable(grvt_signing_benchmark examples/benchmark.cpp)
+  target_link_libraries(grvt_signing_benchmark PRIVATE grvt::signing grvt_sdk_flags)
+  if(GRVT_SIGNING_WITH_SECP256K1)
+    target_link_libraries(grvt_signing_reference PRIVATE grvt::signer)
+    target_link_libraries(grvt_signing_benchmark PRIVATE grvt::signer)
+    target_compile_definitions(grvt_signing_reference PRIVATE GRVT_WITH_SIGNER=1)
+    target_compile_definitions(grvt_signing_benchmark PRIVATE GRVT_WITH_SIGNER=1)
+  endif()
+  if(GRVT_SDK_BUILD_TESTS)
+    add_test(NAME reference COMMAND grvt_signing_reference)
+  endif()
+endif()

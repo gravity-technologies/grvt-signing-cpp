@@ -1,0 +1,10 @@
+# Style for the C++ SDK, its tests, examples and generated code. `make sdk-check-cpp` fails on unformatted
+# files; `make sdk-format-cpp` fixes them.
+BasedOnStyle: Google
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Left
+# Wire JSON in tests and examples stays on one line, as it is sent.
+BreakStringLiterals: false
+AllowShortCaseLabelsOnASingleLine: true
+IncludeBlocks: Preserve
