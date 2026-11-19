@@ -31,7 +31,7 @@ The core must reject values that cannot be represented exactly at the required s
 Trailing zeros do not add precision. The core must never round prices, sizes or amounts.
 
 Generate `digest_<call>` (a `Result<SigningRequest>`, no private key needed) and `sign_<call>` for every
-signed call, plus separate digest and attachment functions for bulk requests; [README.md](README.md#signing-with-external-keys)
+signed call, plus separate digest and attachment functions for bulk requests; the [C++ guide](https://developers.grvt.io/sdks/cpp#connect-a-live-application)
 describes how applications use them. Shared server signing cases check encoded fields, digests and signatures.
 
 ## Build boundary

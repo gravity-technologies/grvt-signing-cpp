@@ -3,6 +3,7 @@
   ".gitignore",
   "CHANGELOG.md",
   "CMakeLists.txt",
+  "CONTRIBUTING.md",
   "LICENSE",
   "README.md",
   "RUNTIME_API.md",
