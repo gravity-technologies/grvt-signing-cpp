@@ -3769,7 +3769,7 @@
           "array_depth": 1,
           "optional": true,
           "nullable": true,
-          "description": "The order IDs of the orders to cancel or replace, supply up to 100 orderIDs (if both orderIDs and clientOrderIDs are provided, we will reject the payload)"
+          "description": "The order IDs of the orders to cancel or replace, supply up to 100 orderIDs (a request with both `order_i_ds` and `client_order_i_ds` is rejected)"
         },
         {
           "sdk_name": "client_order_ids",
@@ -3781,7 +3781,7 @@
           "array_depth": 1,
           "optional": true,
           "nullable": true,
-          "description": "The client order IDs of the orders to cancel or replace, supply up to 100 clientOrderIDs (if both orderIDs and clientOrderIDs are provided, we will reject the payload)"
+          "description": "The client order IDs of the orders to cancel or replace, supply up to 100 clientOrderIDs (a request with both `order_i_ds` and `client_order_i_ds` is rejected)"
         },
         {
           "name": "time_to_live_ms",
@@ -3790,8 +3790,8 @@
           "kind": "primitive",
           "json_type": "string",
           "optional": true,
-          "default": "100",
-          "description": "Specifies the time-to-live (in milliseconds) for this cancellation.\nDuring this period, any order creation with a matching `client_order_id` will be cancelled and not be added to the GRVT matching engine.\nThis mechanism helps mitigate time-of-flight issues where cancellations might arrive before the corresponding orders.\nHence, cancellation by `order_id` ignores this field as the exchange can only assign `order_id`s to already-processed order creations.\nThe duration cannot be negative, is rounded down to the nearest 100ms (e.g., `'670'` -> `'600'`, `'30'` -> `'0'`) and capped at 5 seconds (i.e., `'5000'`).\nValue of `'0'` or omission results in the default time-to-live value being applied.\nIf the caller requests multiple successive cancellations for a given order, such that the time-to-live windows overlap, only the first request will be considered.",
+          "default": "0",
+          "description": "How long a cancel by `client_order_id` keeps waiting, in milliseconds, for an order that hasn't arrived yet. A cancel can overtake the create it refers to; an order with that `client_order_id` that arrives within this time is cancelled instead of placed. A cancel by `order_id` ignores this field.\n\nUnlike `cancel_order`, `bulk_orders` doesn't check this value: it isn't rounded, has no minimum and no 5000 ms limit, and `'0'` or a missing value means the cancel doesn't wait. The wait ends at the next 100 ms boundary after it runs out.",
           "example": "500"
         }
       ]
@@ -4002,7 +4002,7 @@
           "json_type": "string",
           "optional": true,
           "default": "100",
-          "description": "Specifies the time-to-live (in milliseconds) for this cancellation.\nDuring this period, any order creation with a matching `client_order_id` will be cancelled and not be added to the GRVT matching engine.\nThis mechanism helps mitigate time-of-flight issues where cancellations might arrive before the corresponding orders.\nHence, cancellation by `order_id` ignores this field as the exchange can only assign `order_id`s to already-processed order creations.\nThe duration cannot be negative, is rounded down to the nearest 100ms (e.g., `'670'` -> `'600'`, `'30'` -> `'0'`) and capped at 5 seconds (i.e., `'5000'`).\nValue of `'0'` or omission results in the default time-to-live value being applied.\nIf the caller requests multiple successive cancellations for a given order, such that the time-to-live windows overlap, only the first request will be considered.",
+          "description": "How long a cancel by `client_order_id` keeps waiting, in milliseconds, for an order that hasn't arrived yet. A cancel can overtake the create it refers to; an order with that `client_order_id` that arrives within this time is cancelled instead of placed. A cancel by `order_id` ignores this field, since an order only has an `order_id` once the exchange has it.\n\nThe value is rounded down to a multiple of 100 ms (`\"670\"` becomes `\"600\"`). `\"0\"`, a missing value, or a value below the exchange's minimum gets the minimum. More than 5000 is rejected with `2301`. If several cancels for the same order overlap in time, only the first counts.",
           "example": "500"
         }
       ]
@@ -4042,7 +4042,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -4735,7 +4735,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -4828,7 +4828,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -5211,7 +5211,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         }
       ]
@@ -5499,7 +5499,7 @@
     },
     {
       "name": "ApiInterestPaymentHistoryRequest",
-      "description": "Query for all historical MAM hourly interest payments charged to a single sub account.\n\nPagination works as follows:<ul><li>We perform a reverse chronological lookup, starting from `end_time`. If `end_time` is not set, we start from the most recent data.</li><li>The lookup is limited to `limit` records. If more data is requested, the response will contain a `next` cursor for you to query the next page.</li><li>If a `cursor` is provided, it will be used to fetch results from that point onwards.</li><li>Pagination will continue until the `start_time` is reached. If `start_time` is not set, pagination will continue as far back as our data retention policy allows.</li></ul>",
+      "description": "Query for all hourly interest payments (multi-asset mode) charged to a single sub account.\n\nPagination works as follows:<ul><li>We perform a reverse chronological lookup, starting from `end_time`. If `end_time` is not set, we start from the most recent data.</li><li>The lookup is limited to `limit` records. If more data is requested, the response will contain a `next` cursor for you to query the next page.</li><li>If a `cursor` is provided, it will be used to fetch results from that point onwards.</li><li>Pagination will continue until the `start_time` is reached. If `start_time` is not set, pagination will continue as far back as our data retention policy allows.</li></ul>",
       "is_root": true,
       "fields": [
         {
@@ -5607,7 +5607,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         }
       ]
@@ -5952,7 +5952,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -6847,7 +6847,7 @@
     },
     {
       "name": "ApiTickerRequest",
-      "description": "Retrieves a single ticker value for a single instrument. Please do not use this to repeatedly poll for data -- a websocket subscription is much more performant, and useful.<br><br>Rate limit:<ul><li>Perpetual, future, option and spot instruments: the standard rate limit for this endpoint, per IP address.</li><li>Stable perps (`_SFP` instruments): a separate per-IP-address limit, shared across all stable perp instruments (one budget for all of them, not one per instrument). IP addresses on the gateway whitelist are exempt.</li></ul>A request over the limit is rejected with error `1006` (HTTP `429`). The `X-RateLimit-Limit` and `X-RateLimit-Remaining` response headers show the limit that applied to the request.",
+      "description": "Retrieves a single ticker value for a single instrument. Please do not use this to repeatedly poll for data -- a websocket subscription is much more performant, and useful.<br><br>Rate limit:<ul><li>Perpetuals and spot swaps: the standard rate limit for this endpoint, per IP address.</li><li>Stable perps (`_SFP` instruments): a separate per-IP-address limit, shared across all stable perp instruments (one budget for all of them, not one per instrument). IP addresses on the gateway whitelist are exempt.</li></ul>A request over the limit is rejected with error `1006` (HTTP `429`). The `X-RateLimit-Limit` and `X-RateLimit-Remaining` response headers show the limit that applied to the request.",
       "is_root": true,
       "fields": [
         {
@@ -6856,7 +6856,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         }
       ]
@@ -6886,7 +6886,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -6971,7 +6971,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -7010,7 +7010,7 @@
           "type": "bool",
           "kind": "primitive",
           "json_type": "boolean",
-          "description": "Gravity has acknowledged that the transfer has been successfully processed. If true, a `tx_id` will be returned. If false, an error will be returned.",
+          "description": "True when the exchange has processed the transfer. If true, a `tx_id` will be returned. If false, an error will be returned.",
           "example": "true"
         },
         {
@@ -8356,7 +8356,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         }
       ]
@@ -9136,7 +9136,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -9543,7 +9543,7 @@
           "kind": "primitive",
           "json_type": "string",
           "optional": true,
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -10050,7 +10050,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -10326,7 +10326,7 @@
           "type": "timestamp",
           "kind": "timestamp",
           "json_type": "string",
-          "description": "RFQ TTL. The timestamp after which Gravity expires the RFQ, expressed in unix nanoseconds. Default 60s, cap 300s (per-instrument config)",
+          "description": "When the RFQ expires, in unix nanoseconds. Default 60s, cap 300s (per-instrument config)",
           "example": "1697788800000000000"
         },
         {
@@ -11121,7 +11121,7 @@
           "kind": "primitive",
           "json_type": "string",
           "optional": true,
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -11445,7 +11445,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12248,7 +12248,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.algo.order`.",
           "example": "v1.algo.order"
         },
         {
@@ -12257,7 +12257,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12266,7 +12266,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12283,7 +12283,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12327,7 +12327,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.cancel`.",
           "example": "v1.cancel"
         },
         {
@@ -12336,7 +12336,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example_placeholder": "GRVT_SUB_ACCOUNT_ID"
         },
         {
@@ -12345,7 +12345,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12362,7 +12362,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12394,7 +12394,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.candle`.",
           "example": "v1.candle"
         },
         {
@@ -12403,7 +12403,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12412,7 +12412,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12429,7 +12429,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12445,7 +12445,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp",
           "selector": "primary"
         },
@@ -12482,7 +12482,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The websocket channel to which the response is sent",
+          "description": "The stream this frame belongs to, e.g. `v1.deposit`.",
           "example": "v1.deposit"
         },
         {
@@ -12491,7 +12491,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12500,7 +12500,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12517,7 +12517,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12549,7 +12549,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The websocket channel to which the response is sent",
+          "description": "The stream this frame belongs to, e.g. `v1.fill`.",
           "example": "v1.fill"
         },
         {
@@ -12558,7 +12558,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12567,7 +12567,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12584,7 +12584,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12651,7 +12651,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.mini.s`.",
           "example": "v1.mini.s"
         },
         {
@@ -12660,7 +12660,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12669,7 +12669,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12686,7 +12686,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12702,7 +12702,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp",
           "selector": "primary"
         },
@@ -12728,7 +12728,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.order`.",
           "example": "v1.order"
         },
         {
@@ -12737,7 +12737,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12746,7 +12746,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12763,7 +12763,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12807,7 +12807,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.state`.",
           "example": "v1.state"
         },
         {
@@ -12816,7 +12816,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12825,7 +12825,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12842,7 +12842,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12886,7 +12886,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.book.s`.",
           "example": "v1.book.s"
         },
         {
@@ -12895,7 +12895,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12904,7 +12904,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -12921,7 +12921,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -12937,7 +12937,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp",
           "selector": "primary"
         },
@@ -12975,7 +12975,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.position`.",
           "example": "v1.position"
         },
         {
@@ -12984,7 +12984,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -12993,7 +12993,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13010,7 +13010,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -13054,7 +13054,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.quote`.",
           "example": "v1.quote"
         },
         {
@@ -13063,7 +13063,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "AAPL_USDC_SFP"
         },
         {
@@ -13072,7 +13072,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13089,7 +13089,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -13400,7 +13400,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.ticker.s`.",
           "example": "v1.ticker.s"
         },
         {
@@ -13409,7 +13409,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -13418,7 +13418,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13435,7 +13435,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -13451,7 +13451,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp",
           "selector": "primary"
         },
@@ -13477,7 +13477,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Stream name",
+          "description": "The stream this frame belongs to, e.g. `v1.trade`.",
           "example": "v1.trade"
         },
         {
@@ -13486,7 +13486,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -13495,7 +13495,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13512,7 +13512,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -13528,7 +13528,7 @@
           "type": "asset",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The readable instrument name:<ul><li>Perpetual: `ETH_USDT_Perp`</li><li>Future: `BTC_USDT_Fut_20Oct23`</li><li>Call: `ETH_USDT_Call_20Oct23_2800`</li><li>Put: `ETH_USDT_Put_20Oct23_2800`</li></ul>",
+          "description": "The instrument name, e.g. `BTC_USDT_Perp` (perpetual), `BTC_USDT_SFP` (stable funding perp) or `BTC_USDT_SpotSwap` (spot swap).",
           "example": "BTC_USDT_Perp",
           "selector": "primary"
         },
@@ -13555,7 +13555,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The websocket channel to which the response is sent",
+          "description": "The stream this frame belongs to, e.g. `v1.transfer`.",
           "example": "v1.transfer"
         },
         {
@@ -13564,7 +13564,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -13573,7 +13573,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13590,7 +13590,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -13729,7 +13729,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The websocket channel to which the response is sent",
+          "description": "The stream this frame belongs to, e.g. `v1.withdrawal`.",
           "example": "v1.withdrawal"
         },
         {
@@ -13738,7 +13738,7 @@
           "type": "string",
           "kind": "primitive",
           "json_type": "string",
-          "description": "Primary selector",
+          "description": "The selector this frame is for, as you subscribed with it.",
           "example": "BTC_USDT_Perp"
         },
         {
@@ -13747,7 +13747,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "A sequence number used to determine message order within a stream.\n- If `useGlobalSequenceNumber` is **false**, this returns the gateway sequence number, which increments by one locally within each stream and resets on gateway restarts.\n- If `useGlobalSequenceNumber` is **true**, this returns the global sequence number, which uniquely identifies messages across the cluster.\n  - A single cluster payload can be multiplexed into multiple stream payloads.\n  - To distinguish each stream payload, a `dedupCounter` is included.\n  - The returned sequence number is computed as: `cluster_sequence_number * 10^5 + dedupCounter`.",
+          "description": "This frame's number, an unsigned 64-bit integer sent as a decimal string: compare it as an integer. `\"0\"` on the snapshot sent right after subscribing.\n- With `use_global_sequence_number: true` (recommended), the number is unique across the exchange. One exchange event can produce several frames, so the number is `event number × 10^5 + a counter` that tells them apart.\n- With `false`, it counts up by one per frame of this stream and starts again when the server you are connected to restarts.",
           "example": "872634876"
         },
         {
@@ -13764,7 +13764,7 @@
           "type": "uint64",
           "kind": "primitive",
           "json_type": "string",
-          "description": "The previous sequence number that determines the message order",
+          "description": "The `sequence_number` of the frame before this one on this selector. If it doesn't match the last frame you accepted, you missed frames.",
           "example": "872634875"
         }
       ]
@@ -14473,17 +14473,17 @@
         {
           "name": "LIQUIDATION",
           "value": 16,
-          "description": "the sub account is liquidated (and all open orders are cancelled by Gravity)"
+          "description": "the sub account is liquidated (and all open orders are cancelled by the exchange)"
         },
         {
           "name": "INSTRUMENT_INVALID",
           "value": 17,
-          "description": "instrument is invalid or not found on Gravity"
+          "description": "instrument is invalid or not found on Grvt"
         },
         {
           "name": "INSTRUMENT_DEACTIVATED",
           "value": 18,
-          "description": "instrument is no longer tradable on Gravity. (typically due to a market halt, or instrument expiry)"
+          "description": "instrument is no longer tradable on Grvt. (typically due to a market halt, or instrument expiry)"
         },
         {
           "name": "SYSTEM_FAILOVER",
@@ -14703,12 +14703,12 @@
         {
           "name": "UNDEPLOYED_LOAN_AUTO_EXCHANGE",
           "value": 68,
-          "description": "an undeployed-loan (LTV) auto-exchange executed on the sub account, and all open orders are cancelled by Gravity"
+          "description": "an undeployed-loan (LTV) auto-exchange executed on the sub account, and all open orders are cancelled by the exchange"
         },
         {
           "name": "LIQUIDATION_AUTO_EXCHANGE",
           "value": 69,
-          "description": "a liquidation auto-exchange executed on the sub account, and all open orders are cancelled by Gravity"
+          "description": "a liquidation auto-exchange executed on the sub account, and all open orders are cancelled by the exchange"
         },
         {
           "name": "USDC_COLLATERAL_DISABLED",

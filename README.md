@@ -8,8 +8,8 @@ networking, timers, retries, order books and recovery.
 
 ## Install
 
-Not published as a package: build it from source. You need CMake 3.24+ and GCC or Clang with C++20, on Linux or
-macOS (MSVC is not supported: the core uses `__int128`).
+Not published as a package: build it from source. You need CMake 3.24+ and GCC or Clang with C++20 or newer, on
+Linux or macOS (MSVC is not supported: the core uses `__int128`).
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -90,11 +90,7 @@ nonce, a real expiration and current metadata.
 
 ## Known limitations
 
-- No client: no HTTP, WebSocket, login, session renewal or recovery.
-- `attach_order_bulk_orders` needs a `SignContext::verify` callback that really checks the signer
-  (`grvt::verify_signature` does).
-- A valid digest doesn't mean the exchange will accept the order: tick size, minimum size and minimum notional
-  are checked by your application and the exchange.
+See [Not supported yet](https://developers.grvt.io/sdks/cpp#not-supported-yet) on the C++ guide page.
 
 ## Contributing
 
