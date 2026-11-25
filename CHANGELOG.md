@@ -8,6 +8,14 @@ Contract versions follow semver. Before 1.0.0 the minor digit is the breaking on
 
 A method keeps its meaning once released. When the server adds a new version of a call, the SDKs get a new method with the version in its name (`create_order_v2`); the existing method keeps calling the version it was released with.
 
+## Unreleased
+
+In the contract but not in a release yet. Suggested next version: **0.1.1** (wording only, from 0.1.0).
+
+### Other unreleased changes
+
+- Changed the environments section of the contract (review by hand).
+
 ## 0.1.0 (2026-11-04)
 
 First public contract. The SDKs for Python, TypeScript, Go and Rust, these docs and the signing cases are all generated from it. Later releases list every change against this one.

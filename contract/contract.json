@@ -12,7 +12,7 @@
     ]
   },
   "environments": {
-    "prod": {
+    "production": {
       "chain_id": 325,
       "market_data": "https://market-data.grvt.io",
       "trading": "https://trades.grvt.io",
