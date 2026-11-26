@@ -6741,7 +6741,7 @@
           "json_type": "SfpTradingScheduleGroup",
           "array_depth": 1,
           "nullable": true,
-          "description": "Trading hours as groups of stable perps sharing them: one per asset class, named after it, then one per instrument schedule, named in cluster config. Each stable perp with a schedule is in exactly one group"
+          "description": "Trading hours as groups of stable perps sharing them: one per asset class, named after it, then one per instrument schedule, named in cluster config. A group is split further when its stable perps follow different holiday calendars; each split follows the group it comes from. Each stable perp with a schedule is in exactly one group"
         }
       ]
     },
@@ -10564,7 +10564,7 @@
           "type": "AssetClass",
           "kind": "enum",
           "json_type": "AssetClass",
-          "description": "The instruments' asset class. Its holiday calendar sets the group's holidays",
+          "description": "The instruments' asset class. The group's holidays come from the stable perps' own holiday calendar when one lists them, else from the asset class's default calendar",
           "example": "COMMODITY_CME"
         },
         {

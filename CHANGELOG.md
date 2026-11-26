@@ -15,6 +15,7 @@ In the contract but not in a release yet. Suggested next version: **0.1.1** (wor
 ### Other unreleased changes
 
 - Changed the environments section of the contract (review by hand).
+- Reworded the descriptions or examples of `ApiSfpTradingScheduleResponse.schedules`, `SfpTradingScheduleGroup.asset_class`.
 
 ## 0.1.0 (2026-11-04)
 
